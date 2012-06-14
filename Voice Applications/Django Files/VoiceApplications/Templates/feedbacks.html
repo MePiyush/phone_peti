@@ -1,0 +1,41 @@
+<html>
+	<head>
+		<title>PhonePeti Voice Based Applications</title>
+	</head>
+	<body>
+		<h1><center> List of Feedbacks </h1>
+
+		{% if all_feedbacks %}
+
+		<p><i> Click on the <b>Call ID</b> to Edit details</i></p>
+
+		<table cellpadding="10" border="1">
+		<tr>
+			<th>ID</th>
+			<th>Phone No</th>
+			<th>Date & Time</th>
+			<th>Title</th>
+			<th>Description</th>
+
+		</tr>
+		{% for feedbacks in all_feedbacks %} 
+		<tr>
+			<td><a href="/edit/{{ feedbacks.id }}/"> {{ feedbacks.id }} </a></td>
+			<td> {{ feedbacks.call.phoneNo.phoneNo }} </td>
+			<td> {{ feedbacks.call.startTime }} </td>
+			<td> {{ feedbacks.title }} </td>
+			<td> {{ feedbacks.description }} </td>
+		</tr>
+		{% endfor %}
+		</table>
+
+
+{% else %}
+
+	<p>No Feedbacks !!!</p>
+
+{% endif %}
+
+<p>Click to go back: <a href="/">Home</a></p>
+</body>
+</html>

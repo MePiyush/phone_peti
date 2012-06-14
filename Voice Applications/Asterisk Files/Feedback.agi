@@ -1,0 +1,200 @@
+#!/usr/bin/python
+
+import sys
+import re
+import time
+import datetime
+import random
+import os
+import MySQLdb
+
+# Read and ignore AGI environment (read until blank line)
+
+env = {}
+tests = 0;
+
+while 1:
+   line = sys.stdin.readline().strip()
+
+   if line == '':
+      break
+   key,data = line.split(':')
+   if key[:4] <> 'agi_':
+      #skip input that doesn't begin with agi_
+      sys.stderr.write("Did not work!\n");
+      sys.stderr.flush()
+      continue
+   key = key.strip()
+   data = data.strip()
+   if key <> '':
+      env[key] = data
+
+sys.stderr.write("AGI Environment Dump:\n");
+sys.stderr.flush()
+for key in env.keys():
+   sys.stderr.write(" -- %s = %s\n" % (key, env[key]))
+   sys.stderr.flush()
+
+def checkresult (params):
+   params = params.rstrip()
+   if re.search('^200',params):
+      result = re.search('result=(\d+)',params)
+      if (not result):
+         sys.stderr.write("FAIL ('%s')\n" % params)
+         sys.stderr.flush()
+         return -1
+      else:
+         result = result.group(1)
+         #debug("Result:%s Params:%s" % (result, params))
+         sys.stderr.write("PASS (%s)\n" % result)
+         sys.stderr.flush()
+         return result
+   else:
+      sys.stderr.write("FAIL (unexpected result '%s')\n" % params)
+      sys.stderr.flush()
+      return -2
+
+
+
+
+# Database Connection and Cursor
+
+dbPhone = MySQLdb.connect("localhost", "root", "piyush27", "PhonePeti")
+pp = dbPhone.cursor()
+
+# Variables
+
+locPrompt = "/var/www/VoiceApplications/Media/Prompts/" # Create the Prompts folder and add the location of the folder and add the given prompts in the folder
+locRecord = "/var/www/VoiceApplications/Media/CallRecordings/" # Create the Record folder and add the location of the folder
+locLog = "/var/www/VoiceApplications/Logs/" # Create the Logs folder and add the location of the folder
+
+
+#locPrompt = "/home/piyush/Documents/JobPortal/Prompts/" # Create the Prompts folder and add the location of the folder and add the given prompts
+#locRecord = "/home/piyush/Documents/JobPortal/Record/" # Create the Record folder and add the location of the folder
+noDigit = "\""
+phno = env['agi_callerid']
+stopRecording = "1234567890"
+recFormat = "wav"
+maxTimeout = 10000   # Maximun time for call recording
+maxTimeoutQ = 5000   # Maximun time for keypad input
+maxDigits = 4
+multipleCh = ['49', '50', '51', '52']
+recordFeed = "Feedback--"
+recordAns = "Ans--"
+recordCall = "Complete--"
+datetimeFormat = "%d-%m-%Y---%H:%M:%S"
+curTime = time.strftime(datetimeFormat)
+curDate = time.strftime("%d-%m-%Y")
+
+feedbackFile = locRecord + recordFeed + curTime
+monitorFile = locRecord + recordCall + curTime
+logFile = locLog + curDate+'.log'
+
+feedbackFileDB = recordFeed + curTime
+monitorFileDB = recordCall + curTime
+
+#feedbackFile = locRecord + curDate + recordFeed + curTime
+#monitorFile = locRecord + curDate + recordCall + curTime
+#logFile = locRecord + curDate + '/' + curDate+'.log'
+
+
+# Functions
+
+def dataEnter():
+	pp.execute("select id from PhonePeti_phoneno where phoneNo = '%s'" % (phno))
+	if int(pp.rowcount) == 0:
+	   pp.execute("insert into PhonePeti_phoneno(phoneNo) values ('%s')" % (phno))
+  	   pp.execute("select id from PhonePeti_phoneno where phoneNo = '%s'" % (phno))
+	phID = pp.fetchone()
+	pp.execute("select id from PhonePeti_appinstance where endTime is null")
+	appIntID = pp.fetchone()
+	pp.execute("insert into PhonePeti_call(phoneNo_id, startTime, endTime, appInstance_id, monitorFile) values ('%d', '%s', '%s', '%d', '%s')" % (phID[0], datetime.datetime.strptime(curTime, datetimeFormat), datetime.datetime.strptime(endTime, datetimeFormat), appIntID[0], monitorFileDB + '.wav'))
+	pp.execute("select id from PhonePeti_call where monitorFile = '%s'" % (monitorFileDB + '.wav'))
+	callID = pp.fetchone()
+	pp.execute("insert into Feedback_response(call_id, filePath) values ('%d', '%s')" % (callID[0], feedbackFileDB + '.wav'))
+	
+
+def monitorCall():
+	sys.stderr.write("EXEC Monitor %s,%s,m \n" % (recFormat, monitorFile))
+	sys.stderr.flush( )
+	sys.stdout.write("EXEC Monitor %s,%s,m \n" % (recFormat, monitorFile))
+	sys.stdout.flush( )
+	result = sys.stdin.readline( ).strip( )
+	checkresult(result)
+
+#def dirToday():
+#	if not os.path.exists(locRecord+curDate):	
+#		os.makedirs(locRecord+curDate)
+
+def playPrompt (prompt, escdigit):
+       sys.stderr.write("STREAM FILE %s %s \n" % (prompt, escdigit))
+       sys.stderr.flush( )
+       sys.stdout.write("STREAM FILE %s %s \n" % (prompt, escdigit))
+       sys.stdout.flush( )
+       result = sys.stdin.readline( ).strip( )
+       return checkresult(result)
+
+def recordFile (recordedFile):
+	sys.stderr.write("RECORD FILE %s %s %s %d \n" % (recordedFile, recFormat, stopRecording, maxTimeout))
+	sys.stderr.flush( )
+	sys.stdout.write("RECORD FILE %s %s %s %d \n" % (recordedFile, recFormat, stopRecording, maxTimeout))
+	sys.stdout.flush( )
+	result = sys.stdin.readline( ).strip( )
+	checkresult(result)
+	
+def recordFeedback ():
+	logF.write('Recording Feedback\n')
+	playPrompt(locPrompt+"RecordF", noDigit)				
+	playPrompt("beep", noDigit)
+	recordFile(feedbackFile)	
+	playPrompt(feedbackFile, noDigit)	
+	logF.write('Feedback: ' + feedbackFile + '.wav' + '\n')
+	playPrompt(locPrompt+"Thanks", noDigit)
+
+def wait ():
+	sys.stderr.write("WAIT FOR DIGIT 5000 \n")
+	sys.stderr.flush( )
+	sys.stdout.write("WAIT FOR DIGIT 5000 \n")
+	sys.stdout.flush( )
+	result = sys.stdin.readline( ).strip( )
+	result = checkresult(result)	
+	return result
+
+def enterNo(prompt):
+	sys.stderr.write("GET DATA %s %d %d\n" % (prompt, maxTimeoutQ, maxDigits))
+	sys.stderr.flush( )
+        sys.stdout.write("GET DATA %s %d %d\n" % (prompt, maxTimeoutQ, maxDigits))
+        sys.stdout.flush( )
+        result = sys.stdin.readline( ).strip( )
+        result = checkresult(result)
+	return result
+	
+# Functions ends here
+
+# Main code starts here
+
+monitorCall() # Complete recording of the call begins
+
+playPrompt(locPrompt+"Welcome", noDigit) # Playing the Welcome prompt
+
+#dirToday() # Creating the folder for keeping today's recordings
+logF = open(logFile, 'a') # Opening the Logfile
+
+# Writing the Call's details into logfile
+logF.write('\n- - - NEW CALL BEGINS - - -\n')
+logF.write('Start Time: ' + curTime + '\n')
+logF.write('Phone No: ' + phno + '\n')
+logF.write('Complete Call: ' + monitorFile + '.wav' + '\n')
+
+recordFeedback() # Calling function to record feedback
+
+endTime = time.strftime("%d-%m-%Y---%H:%M:%S") # Finding the end time of call
+
+# Writing the Call's details into logfile
+logF.write('End Time: ' + endTime + '\n')
+logF.write("\n\n")				
+logF.close()
+
+dataEnter() # Writing data into Database
+
+# Main code ends here
