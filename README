@@ -1,0 +1,45 @@
+Instructions for Running the applications:
+
+Part 1 - Asterisk
+
+1. Install Asterisk
+2. Replace the existing extentions.conf file at '/etc/asterisk/extensions.conf' with the given file
+3. Copy the Feedback.agi file at '/var/lib/asterisk/agi-bin'
+4. Create following folders at /var/www
+	i. /var/www/VoiceApplications
+	ii. /var/www/VoiceApplications/Media
+	iii. /var/www/VoiceApplications/Media/Prompts (Addthe prompts in this folder)
+	iv. /var/www/VoiceApplications/Media/CallRecordings
+	v. /var/www/VoiceApplications/Logs
+5. Change the permissions of the folder VoiceApplications: chmod 777 -r VoiceApplications/.*
+6. Install softphone like Twinkle
+7. Establish a call and record
+
+
+Part - 2 MySql
+
+1. Create Database PhonePeti
+
+
+Part 3 - Django
+
+1. Install Django
+2. Create new project 'VoiceApplications'
+3. Copy the Templates folder in the project just created (VoiceApplications)
+4. Create three applications in the project (Feedback, PhonePeti, Survey)
+5. Configure the settings.py file (add the database information, location of Templates folder, Name of application created, MEDIA SETTINGS, Time Zone)
+6. Replace the following files in the applications created (models.py, views.py)
+7. Replace the urls.py in VoiceApplications
+7. Run python manage.py syncdb
+
+
+Part - 4 
+
+1. Create entry in 'PhonePeti_application' table in the database
+2. Create entry in 'PhonePeti_appinstance' table in the database
+
+Part - 5 
+
+1. Run Django server: python manage.py runserver
+2. Test the application
+

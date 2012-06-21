@@ -1,0 +1,19 @@
+<html>
+	<head>
+		<title>Survey & Feedback - login</title>
+	</head>
+	<body>
+	<br/><br/><br/><br/><br/>
+		<h1><center> Station Administrator Login </h1>
+		{% if form.has_errors %}
+			<h3> Your Username and Password didn't match. Please try again!</h3>
+		{%  endif %}
+			<form method = "post" action = ".">
+				{% csrf_token %}
+				<p><center><label for = "id_username"><i>Username:</i></label> {{ form.username }} </p>
+				<p><center><label for = "id_password"><i>Passowrd:</i></label> {{ form.password }} </p>
+				<input type = "hidden" name = "next" value = "/" />
+				<input type = "submit" value = "Enter" />
+			</form>
+	</body>
+</html>
