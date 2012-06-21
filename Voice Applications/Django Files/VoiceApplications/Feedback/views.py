@@ -11,6 +11,7 @@ def edit(request, feedid):
 	caller_of_call_form = CallerForm(request.POST or None, instance=feedback.call.caller)
 	new_caller_form = CallerForm(request.POST or None)
 	tags_form = TagsForm(request.POST or None)
+	all_tags = Tags.objects.all().order_by('tagName')
 
 	tags_of_call_comma_sep=list()
 	tags_of_call_list = feedback.call.tags_set.all()
@@ -44,16 +45,19 @@ def edit(request, feedid):
 						Call.objects.filter(id=feedback.call.id).update(caller=int(new_caller_form.data['callers']))
 
 		if (tags_form.is_valid()):
-			tag_names_new = tags_form.data['tagName'].split(',')
 			feedback.call.tags_set.clear()
+			for tag_names in request.POST.getlist('tagName'):
+				tag_names_new = tag_names.split(',')
+				for tag_name in tag_names_new:
+			
+#			tag_names_new = tags_form.data['tagName'].split(',')
+#			for tag_name in tag_names_new:
 
-			for tag_name in tag_names_new:
-
-				if (tag_name.strip()):
-					tag_object, created = Tags.objects.get_or_create(tagName=tag_name.strip())
-					tag_object.call.add(feedback.call)
+					if (tag_name.strip()):
+						tag_object, created = Tags.objects.get_or_create(tagName=tag_name.strip())
+						tag_object.call.add(feedback.call)
 
 		return redirect('/feedbacks/')
 
-	return render_to_response('edit.html', {'feedid': feedid, 'feedback': feedback, 'feedback_form': feedback_form, 'existing_callers': existing_callers, 'existing_callers_count': existing_callers.count(), 'caller_of_call': feedback.call.caller, 'caller_of_call_form': caller_of_call_form, 'new_caller_form': new_caller_form, 'tags_form': tags_form, 'tags_of_call_comma_sep': tags_of_call_comma_sep}, context_instance=RequestContext(request))
+	return render_to_response('edit.html', {'feedid': feedid, 'feedback': feedback, 'feedback_form': feedback_form, 'existing_callers': existing_callers, 'existing_callers_count': existing_callers.count(), 'caller_of_call': feedback.call.caller, 'caller_of_call_form': caller_of_call_form, 'new_caller_form': new_caller_form, 'tags_form': tags_form, 'tags_of_call_comma_sep': tags_of_call_comma_sep, 'all_tags': all_tags,}, context_instance=RequestContext(request))
 
