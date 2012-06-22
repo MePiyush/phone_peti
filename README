@@ -8,12 +8,11 @@ Part 1 - Asterisk
 4. Create following folders at /var/www
 	i. /var/www/VoiceApplications
 	ii. /var/www/VoiceApplications/Media
-	iii. /var/www/VoiceApplications/Media/Prompts (Addthe prompts in this folder)
+	iii. /var/www/VoiceApplications/Media/Prompts (Copy all the prompts in this folder)
 	iv. /var/www/VoiceApplications/Media/CallRecordings
 	v. /var/www/VoiceApplications/Logs
 5. Change the permissions of the folder VoiceApplications: chmod 777 -r VoiceApplications/.*
 6. Install softphone like Twinkle
-7. Establish a call and record
 
 
 Part - 2 MySql
@@ -35,11 +34,17 @@ Part 3 - Django
 
 Part - 4 
 
-1. Create entry in 'PhonePeti_application' table in the database
-2. Create entry in 'PhonePeti_appinstance' table in the database
+1. Create entry in 'PhonePeti_application' table in the database: INSERT INTO PhonePeti_application (name, description) VALUES ('Feedback', 'Application for taking Feedback'); 
+
+2. Create entry in 'PhonePeti_appinstance' table in the database: INSERT INTO PhonePeti_appinstance (app_id, startTime, endTime, options) VALUES ('1', NULL, NULL, 'Feedback Application');
+
 
 Part - 5 
 
 1. Run Django server: python manage.py runserver
 2. Test the application
 
+
+Part - 6 
+
+1. Establish a call with Asterisk and Twinkle and record

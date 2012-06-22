@@ -57,7 +57,7 @@ def edit(request, feedid):
 						tag_object, created = Tags.objects.get_or_create(tagName=tag_name.strip())
 						tag_object.call.add(feedback.call)
 
-		return redirect('/feedbacks/')
+		return redirect('/')
 
 	return render_to_response('edit.html', {'feedid': feedid, 'feedback': feedback, 'feedback_form': feedback_form, 'existing_callers': existing_callers, 'existing_callers_count': existing_callers.count(), 'caller_of_call': feedback.call.caller, 'caller_of_call_form': caller_of_call_form, 'new_caller_form': new_caller_form, 'tags_form': tags_form, 'tags_of_call_comma_sep': tags_of_call_comma_sep, 'all_tags': all_tags,}, context_instance=RequestContext(request))
 
