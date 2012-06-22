@@ -19,5 +19,10 @@ def feedbacks(request):
 
 def del_caller(request, callid):
 	Call.objects.filter(id=callid).update(caller='')
-	return redirect (feedbacks)
+	return redirect ('/')
+
+def del_feedback(request, feedid):
+	del_feed = Response.objects.get(id=feedid)
+	del_feed.delete()
+	return redirect ('/')
 

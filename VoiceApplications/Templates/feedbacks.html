@@ -10,6 +10,7 @@
 			function GoTo(loc_url)
 			{
 				document.getElementById('edit_frame').style.display='block';
+				document.getElementById('edit_frame').style.position='absolute';
 				document.getElementById('edit_frame').src=loc_url;
 			}
 			function ChangeRowColor(tableRow)
@@ -26,13 +27,14 @@
 		</script>
 		<style type="text/css">
 
+
 			#edit_frame
 			{
-			margin: -290px 0px;
+			top: 10%; left: 55%;
 			}
 			table
 			{
-				width: 500px;
+
 				border-collapse: collapse;
 				cursor: pointer;
 			}
@@ -47,7 +49,7 @@
 			}
 			tbody td
 			{
-				border: 1px dotted #D8D5D5;
+				border: 1px #D8D5D5;
 				text-align: center;
 			}
 		</style>
@@ -60,12 +62,15 @@
 		{% if all_feedbacks %}
 
 		<h3><i> Select the <b>Call </b> to Edit details</i></h3>
-
+		<!--<table id = "wrapper">
+		<tr><td style="width:60%; vertical-align:top">-->
 		<table id="feedback">
 		<thead>
 		<tr>
+			<th>Name</th>
 			<th>Phone No</th>
 			<th>Date & Time</th>
+			<th>Title</th>
 		</tr>
 		</thead>
 
@@ -73,19 +78,29 @@
 		{% for feedbacks in all_feedbacks %}
 
 		<tr onclick="ChangeRowColor(this); GoTo('/edit/{{ feedbacks.id }}');">
+			<td> {{ feedbacks.call.caller.name }} </td>
 			<td> {{ feedbacks.call.phoneNo.phoneNo }} </td>
 			<td> {{ feedbacks.call.startTime }} </td>
-
-
+			<td> {{ feedbacks.title }} </td>
 		</tr>
 
 		{% endfor %}
 		</tbody>
 
 		</table>
-		<iframe id="edit_frame" src="/edit/{{ feedbacks.id }}" align="right" scrolling="auto" width="500" height="700" frameborder="0"></iframe>
-
+		<!--</td>
+		<td style="width:20px">
+		</td>
+		<td>
+		<iframe id="edit_frame" src="" align="right" scrolling="auto" width="500" height="700" frameborder="0"></iframe>
+		</td>
+		</tr></table>-->
+		<iframe id="edit_frame" src="" scrolling="auto" width="550" height="650" frameborder="0"></iframe>
 		{% else %}
+
+
+
+
 
 		<p>No Feedbacks !!!</p>
 

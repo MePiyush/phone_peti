@@ -26,6 +26,8 @@ urlpatterns = patterns('',
 
 	url(r'^del_caller/(?P<callid>\d+)/$', 'PhonePeti.views.del_caller'),
 
+	url(r'^del_feedback/(?P<feedid>\d+)/$', 'PhonePeti.views.del_feedback'),
+
 	url(r'^CallRecordings/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT,}),
 
 )
