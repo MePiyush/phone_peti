@@ -9,7 +9,7 @@ Part 1 - Asterisk
 	iii. /usr/local/phonepeti/logs
 4. Change recursively the permissions of the folder phonepeti/media and phonepeti/logs to a+w 
 5. Install softphone like Twinkle
-
+6. Install sox
 
 Part - 2 MySql
 1. Intall mysql-server
@@ -61,7 +61,7 @@ sudo mkdir -p /usr/local/phonepeti/logs
 sudo chmod -R a+w /usr/local/phonepeti/logs 
 sudo chmor -R a+w /usr/local/phonepeti/media
 
-sudo apt-get install twinkle mysql-server
+sudo apt-get install twinkle mysql-server sox
 mysql -uroot -pjunoon -e "create database PhonePeti"
 
 sudo apt-get install libmysqlclient-dev python2.6-dev
