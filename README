@@ -3,12 +3,12 @@ Instructions for Running the applications:
 Part 1 - Asterisk
 1. Install Asterisk
 2. Replace the existing extentions.conf file at '/etc/asterisk/extensions.conf' with the given file
-3. Create following folders at /var/www
+3. Create following folders
 	i. /usr/local/phonepeti/media/prompts 
 	ii. /usr/local/phonepeti/media/recordings
 	iii. /usr/local/phonepeti/logs
-5. Change recursively the permissions of the folder phonepeti/media and phonepeti/logs to a+w 
-6. Install softphone like Twinkle
+4. Change recursively the permissions of the folder phonepeti/media and phonepeti/logs to a+w 
+5. Install softphone like Twinkle
 
 
 Part - 2 MySql
@@ -24,12 +24,14 @@ Part 3 - Django
 5. Run python manage.py syncdb
 
 Part - 4 
-1. Create entry in 'PhonePeti_application' table in the database
-2. Create entry in 'PhonePeti_appinstance' table in the database
+1. Create entry in 'PhonePeti_application' table in the database: INSERT INTO PhonePeti_application (name, description) VALUES ('Feedback', 'Application for taking Feedback'); 
+2. Create entry in 'PhonePeti_appinstance' table in the database: INSERT INTO PhonePeti_appinstance (app_id, startTime, endTime, options) VALUES ('1', NULL, NULL, 'Feedback Application');
+
 
 Part - 5 
 1. Run Django server: python manage.py runserver
 2. Test the application
+
 
 Part - 6
 1. Install apache webserver 
@@ -92,3 +94,4 @@ Allow from all
 </Files>
 </Directory>
 -------------------------
+

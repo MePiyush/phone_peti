@@ -142,7 +142,7 @@ def recordFile (recordedFile):
 	
 def recordFeedback ():
 	logF.write('Recording Feedback\n')
-	playPrompt(locPrompt+"RecordF", noDigit)				
+	playPrompt(locPrompt+"RecordFeedback", noDigit)				
 	playPrompt("beep", noDigit)
 	recordFile(feedbackFile)	
 	playPrompt(feedbackFile, noDigit)	
