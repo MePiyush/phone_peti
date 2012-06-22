@@ -59,23 +59,21 @@ def checkresult (params):
 
 # Database Connection and Cursor
 
-dbPhone = MySQLdb.connect("localhost", "root", "piyush27", "PhonePeti")
+dbPhone = MySQLdb.connect("localhost", "root", "junoon", "PhonePeti")
 pp = dbPhone.cursor()
 
 # Variables
 
-locPrompt = "/var/www/VoiceApplications/Media/Prompts/" # Create the Prompts folder and add the location of the folder and add the given prompts in the folder
-locRecord = "/var/www/VoiceApplications/Media/CallRecordings/" # Create the Record folder and add the location of the folder
-locLog = "/var/www/VoiceApplications/Logs/" # Create the Logs folder and add the location of the folder
+locPrompt = "/usr/local/phonepeti/media/prompts/" # Create the Prompts folder and add the location of the folder and add the given prompts in the folder
+locRecord = "/usr/local/phonepeti/media/recordings/" # Create the Record folder and add the location of the folder
+locLog = "/usr/local/phonepeti/logs/" # Create the Logs folder and add the location of the folder
 
 
-#locPrompt = "/home/piyush/Documents/JobPortal/Prompts/" # Create the Prompts folder and add the location of the folder and add the given prompts
-#locRecord = "/home/piyush/Documents/JobPortal/Record/" # Create the Record folder and add the location of the folder
 noDigit = "\""
 phno = env['agi_callerid']
 stopRecording = "1234567890"
 recFormat = "wav"
-maxTimeout = 10000   # Maximun time for call recording
+maxTimeout = 120000   # Maximun time for call recording
 maxTimeoutQ = 5000   # Maximun time for keypad input
 maxDigits = 4
 multipleCh = ['49', '50', '51', '52']
