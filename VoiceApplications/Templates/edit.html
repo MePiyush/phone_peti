@@ -45,7 +45,7 @@
 			{% csrf_token %}
 			<p><b><i>Phone No:</i>  {{ feedback.call.phoneNo.phoneNo }} &nbsp; &nbsp; <i>Date & Time:</i>  {{ feedback.call.startTime }}</b></p>
 
-			<embed  src="/CallRecordings/{{ feedback.filePath }}" autostart=FALSE height="22"/>
+			<embed  src="/recordings/{{ feedback.filePath }}" autostart=FALSE height="22"/>
 
 			<p><i>Title:</i>  {{ feedback_form.title }}</p>
 			<p><i>Description:</i>  {{ feedback_form.description }}</p>
