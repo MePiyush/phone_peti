@@ -2,16 +2,17 @@
 	<head>
 		<title>PhonePeti - Voice Based Applications</title>
 		<script type="text/javascript">
-			
+
 			function close_edit_frame()
 			{
 				parent.document.getElementById('edit_frame').style.display="none";
 				var myTable=parent.document.getElementById('feedback');
-				var i=0;
-				for (i=0;i<myTable.rows.length;i++)	
-				{
-					myTable.rows[i].bgColor = 'white';	
-				}
+				//var i=0;
+				//for (i=0;i<myTable.rows.length;i++)	
+				//{
+				//	myTable.rows[i].bgColor = 'white';	
+				//}
+				parent.window.location.reload(true);
 			}
 
 			function showtags()
@@ -31,21 +32,28 @@
 		</script>
 
 		<style type="text/css">
-			#tag_list { margin: -49px 280px; border:1px dotted #ccc; width:180px; height: 80px; overflow: auto; }
+		  #tag_list { margin: -60px 320px; border:1px dotted #ccc; width:180px; height: 100px; overflow: auto; }
 		</style>
 
 	</head>
 	
 	<body onload="hidefield();">
-		<h3><i>Call Details</i></h3>
+<!--		<h3><i>Call Details</i></h3>
+-->
+
+		<p><i><span style="font-size: 18px;"><b> Call Details </b></span>( <a href="/del_feedback/{{ feedid }}/" onclick="return close_edit_frame();">Delete Call</a> )</i></p>
+
+
+
 		{% if error_message %}
 			<p><strong>{{ error_message }}</strong></p>
 		{% endif %}
+
+
 		<form action="/edit/{{ feedid }}/" method="post">
 			{% csrf_token %}
 			<p><b><i>Phone No:</i>  {{ feedback.call.phoneNo.phoneNo }} &nbsp; &nbsp; <i>Date & Time:</i>  {{ feedback.call.startTime }}</b></p>
-
-			<embed  src="/recordings/{{ feedback.filePath }}" autostart=FALSE height="22"/>
+			<embed  src="/recordings/{{ feedback.filePath }}" autostart=FALSE height="22" bgcolor="white"/>
 
 			<p><i>Title:</i>  {{ feedback_form.title }}</p>
 			<p><i>Description:</i>  {{ feedback_form.description }}</p>
@@ -64,7 +72,7 @@
 
 		{% if existing_callers_count %}
 			{%  if caller_of_call %}
-				<p><i><span style="font-size: 18px;"><b> Caller Details </b></span>( <a href="/del_caller/{{ feedback.call.id }}/">Delete Caller</a> )</i></p>
+				<p id="del_caller"><i><span style="font-size: 18px;"><b> Caller Details </b></span>( <a href="/del_caller/{{ feedback.call.id }}/" onclick="return close_edit_frame();">Delete Caller</a> )</i></p>
 				<p><i>Name:</i>  {{ caller_of_call_form.name }}</p>
 				<p><i>Address:</i>  {{ caller_of_call_form.address }}</p>
 				<p><i>Profession:</i>  {{ caller_of_call_form.profession }}</p>
@@ -95,7 +103,7 @@
 			{% endif %}
 		{% else %}
 
-			<p><i><span style="font-size: 18px;"><b> {{ feedback.call.phoneNo.phoneNo }} </b></span> is unregistered, Please register</i></p>
+			<p><i><span style="font-size: 18px;"><b> {{ feedback.call.phoneNo.phoneNo }} </b></span> is not in Database</p><p>Please add</i></p>
 			<p><i>Name:</i>  {{ new_caller_form.name }}</p>
 			<p><i>Address:</i>  {{ new_caller_form.address }}</p>
 			<p><i>Profession:</i>  {{ new_caller_form.profession }}</p>
@@ -105,6 +113,5 @@
 	
 			<p><center><input type="submit" value="Save" onclick="close_edit_frame();"/></p>
 			</form>
-
 	</body>
 </html>
