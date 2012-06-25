@@ -1,4 +1,8 @@
-Instructions for Running the applications:
+Instructions for Running the Applications:
+
+1. RUN the Install script as root
+2. Give the location of the Feedback AGI (/usr/local/phonepeti/Feedback/Feedback.agi) file in the extentions.conf (/etc/asterisk/extensions.conf) or Replace the existing extentions.conf file at '/etc/asterisk/extensions.conf' with the given file
+
 
 Part 1 - Asterisk
 1. Install Asterisk
@@ -16,7 +20,6 @@ Part - 2 MySql
 1. Intall mysql-server
 2. Create Database PhonePeti
 
-
 Part 3 - Django
 1. Install libmysqlclient-dev, python2.6-dev, MySQL-Python 
 2. Install Django
@@ -28,11 +31,9 @@ Part - 4
 1. Create entry in 'PhonePeti_application' table in the database: INSERT INTO PhonePeti_application (name, description) VALUES ('Feedback', 'Application for taking Feedback'); 
 2. Create entry in 'PhonePeti_appinstance' table in the database: INSERT INTO PhonePeti_appinstance (app_id, startTime, endTime, options) VALUES ('1', NULL, NULL, 'Feedback Application');
 
-
 Part - 5 
 1. Run Django server: python manage.py runserver
 2. Test the application
-
 
 Part - 6
 1. Install apache webserver 
