@@ -7,9 +7,10 @@ Part 1 - Asterisk
 	i. /usr/local/phonepeti/media/prompts 
 	ii. /usr/local/phonepeti/media/recordings
 	iii. /usr/local/phonepeti/logs
-4. Change recursively the permissions of the folder phonepeti/media and phonepeti/logs to a+w 
-5. Install softphone like Twinkle
-6. Install sox
+4. Copy all the Prompts into the prompts folder
+5. Change recursively the permissions of the folder phonepeti/media and phonepeti/logs to a+w 
+6. Install softphone like Twinkle
+7. Install sox
 
 Part - 2 MySql
 1. Intall mysql-server

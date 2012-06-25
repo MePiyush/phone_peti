@@ -30,4 +30,6 @@ urlpatterns = patterns('',
 
 	url(r'^CallRecordings/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT,}),
 
+	url(r'^download/(?P<feedid>\d+)/$', 'Feedback.views.download'),
+
 )

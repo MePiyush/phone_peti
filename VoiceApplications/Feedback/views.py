@@ -3,6 +3,7 @@ from django.shortcuts import render_to_response, redirect, get_object_or_404
 from Feedback.models import Response, ResponseForm
 from PhonePeti.models import Caller, CallerForm, Call, CallForm, Tags, TagsForm
 from django.template import RequestContext
+from django.http import HttpResponse
 
 def edit(request, feedid):
 	feedback = get_object_or_404(Response, id=feedid)
@@ -61,3 +62,9 @@ def edit(request, feedid):
 
 	return render_to_response('edit.html', {'feedid': feedid, 'feedback': feedback, 'feedback_form': feedback_form, 'existing_callers': existing_callers, 'existing_callers_count': existing_callers.count(), 'caller_of_call': feedback.call.caller, 'caller_of_call_form': caller_of_call_form, 'new_caller_form': new_caller_form, 'tags_form': tags_form, 'tags_of_call_comma_sep': tags_of_call_comma_sep, 'all_tags': all_tags,}, context_instance=RequestContext(request))
 
+def download(request, feedid):
+	feedback = get_object_or_404(Response, id=feedid)
+	fopen = open("/usr/local/phonepeti/media/recordings/" + feedback.filePath, 'r')
+	download_file = HttpResponse(fopen, mimetype='audio/wav')
+	download_file['Content-Disposition'] = 'attachment; filename = %s' % (feedback.filePath)
+	return download_file
