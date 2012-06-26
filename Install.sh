@@ -1,11 +1,18 @@
 #!/bin/bash
 
-#Setting home as Working Directory
-cd
+if [ `id -u` -ne 0 ]
+then
+	echo "ERROR: The script mus be run as root"
+	exit -1
+fi
+
+#Setting tmp as Working Directory
+cd /tmp
 
 #Create Directory
-mkdir PhonePetiUI
-cd PhonePetiUI
+rm -f PhonePeti
+mkdir PhonePeti
+cd PhonePeti
 
 #Install Dependencies
 sudo apt-get -y install sox apache2 libapache2-mod-wsgi python-mysqldb libmysqlclient-dev git-core

@@ -45,7 +45,7 @@ class Call (models.Model):
 	phoneNo = models.ForeignKey(PhoneNo)
 	caller = models.ForeignKey(Caller, null=True, blank=True)
 	startTime = models.DateTimeField()
-	endTime = models.DateTimeField()
+	endTime = models.DateTimeField(null=True)
 	appInstance = models.ForeignKey(AppInstance)
 	monitorFile = models.FilePathField()
 
