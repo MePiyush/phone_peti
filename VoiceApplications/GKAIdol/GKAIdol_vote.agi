@@ -1,0 +1,371 @@
+#!/usr/bin/python
+
+import sys
+import re
+import time
+import datetime
+import random
+import os
+
+# Importing Djando models
+sys.path.append('/usr/local/phonepeti/') # Path
+os.environ['DJANGO_SETTINGS_MODULE'] = 'VoiceApplications.settings'
+
+from PhonePeti.models import *
+from GKAIdol.models import *
+
+# Read and ignore AGI environment (read until blank line)
+
+env = {}
+tests = 0;
+
+while 1:
+   line = sys.stdin.readline().strip()
+
+   if line == '':
+      break
+   key,data = line.split(':')
+   if key[:4] <> 'agi_':
+      #skip input that doesn't begin with agi_
+      sys.stderr.write("Did not work!\n");
+      sys.stderr.flush()
+      continue
+   key = key.strip()
+   data = data.strip()
+   if key <> '':
+      env[key] = data
+
+sys.stderr.write("AGI Environment Dump:\n");
+sys.stderr.flush()
+for key in env.keys():
+   sys.stderr.write(" -- %s = %s\n" % (key, env[key]))
+   sys.stderr.flush()
+
+def checkresult (params):
+   params = params.rstrip()
+   if re.search('^200',params):
+      result = re.search('result=(\d+)',params)
+      if (not result):
+         sys.stderr.write("FAIL ('%s')\n" % params)
+         sys.stderr.flush()
+         return -1
+      else:
+         result = result.group(1)
+         #debug("Result:%s Params:%s" % (result, params))
+         sys.stderr.write("PASS (%s)\n" % result)
+         sys.stderr.flush()
+         return result
+   else:
+      sys.stderr.write("FAIL (unexpected result '%s')\n" % params)
+      sys.stderr.flush()
+      return -2
+
+# Variables for time
+
+datetimeFormat = "%d-%m-%Y---%H:%M:%S"
+curTime = time.strftime(datetimeFormat)
+curDate = time.strftime("%d-%m-%Y")
+
+# Path variables
+
+locPrompt = "/usr/local/phonepeti/GKAIdol/media/prompts/" # Path # Location of prompts folder
+locRecord = "/usr/local/phonepeti/GKAIdol/media/recordings/"  # Path # Location of call recordings
+locLog = "/usr/local/phonepeti/GKAIdol/logs/"  # Path # Location of call logs
+
+record_Call = "Complete--" + curTime # Path
+personal_details = "Personal-Details--" + curTime # Path
+recorded_song = "Recorded-Song--" + curTime # Path
+
+monitorFile = locRecord + record_Call
+monitorFiledb = record_Call
+
+recordedSongFile = locRecord + recorded_song
+recordedSongFiledb = recorded_song
+
+logFile = locLog + curDate + '.log'
+
+# Call variables
+noDigit = "\""
+zerototwo = "012"
+zerotofour = "01234"
+phno = env['agi_callerid']
+stopRecording = "1234567890"
+stopR = "#"
+recFormat = "wav"
+maxTimeout_song = 30000
+maxTimeout_callerinfo = 20000
+no_of_votes = 0
+twoOptions = ['49', '50']
+fourOptions = ['49', '50', '51', '52']
+# Functions
+
+def monitorCall():
+	sys.stderr.write("EXEC MixMonitor %s.%s \n" % (monitorFile, recFormat))
+	sys.stderr.flush( )
+	sys.stdout.write("EXEC MixMonitor %s.%s \n" % (monitorFile, recFormat))
+	sys.stdout.flush( )
+	result = sys.stdin.readline( ).strip( )
+	checkresult(result)
+
+def playPrompt (prompt, escdigit):
+       sys.stderr.write("STREAM FILE %s %s \n" % (prompt, escdigit))
+       sys.stderr.flush( )
+       sys.stdout.write("STREAM FILE %s %s \n" % (prompt, escdigit))
+       sys.stdout.flush( )
+       result = sys.stdin.readline( ).strip( )
+       return checkresult(result)
+
+def wait ():
+	sys.stderr.write("WAIT FOR DIGIT 10000 \n") # Wait for 10 sec 
+	sys.stderr.flush( )
+	sys.stdout.write("WAIT FOR DIGIT 10000 \n")
+	sys.stdout.flush( )
+	result = sys.stdin.readline( ).strip( )
+	result = checkresult(result)	
+	return result
+
+
+def in_same_group(songs):
+   group = songs[0].group
+   for song in songs:
+      if song.group != group:
+         return False
+
+   return True
+
+
+def get_group():
+   group0 = Recording.objects.raw("select * from GKAIdol_recording where id in (select max(id) from GKAIdol_recording where status='A' and GKAIdol_recording.group = 0 group by phoneNo_id)")
+   group0_count = len(list(group0))
+   group1 = Recording.objects.raw("select * from GKAIdol_recording where id in (select max(id) from GKAIdol_recording where status='A' and GKAIdol_recording.group = 1 group by phoneNo_id)")
+   group1_count = len(list(group1))
+
+   group0_square = group0_count * group0_count;
+   group1_square = group1_count * group1_count;
+   sum_square = group0_square + group1_square
+   r = random.randint(0, sum_square)
+
+   if r < group0_square:
+      return 0
+   else:
+      return 1
+
+def select2songs():
+   group = get_group()
+   recordings = Recording.objects.raw("select * from GKAIdol_recording where id in (select max(id) from GKAIdol_recording where status='A' and GKAIdol_recording.group = " + str(group) + " group by phoneNo_id)")
+   songs = Recording.objects.filter(id__in=[recording.id for recording in recordings]).order_by('?')[:2]
+
+   writelog('Select2Songs: Group = ' + str(group) + ', selected songs:\n')
+   for song in songs:
+      writelog(song.recording + '\n')
+
+   return songs
+
+def select4songs():
+   group = get_group()
+   recordings = Recording.objects.raw("select * from GKAIdol_recording where id in (select max(id) from GKAIdol_recording where status='A' and GKAIdol_recording.group = " + str(group) + " group by phoneNo_id)")
+   songs = Recording.objects.filter(id__in=[recording.id for recording in recordings]).order_by('?')[:4]
+
+   writelog('Select4Songs: Group = ' + str(group) + ', selected songs:\n')
+   for song in songs:
+      writelog(song.recording + '\n')
+
+   return songs
+
+def voteSong(choice, no_of_votes):
+
+	if choice==0:
+		writelog('Prompt: Welcome\n')
+		playPrompt(locPrompt+"welcome_2", noDigit) # Welcome Prompt
+                writelog('Prompt: Voting Instruction\n')
+                playPrompt(locPrompt+"vote_instruction_2", noDigit)
+		writelog('Call Status: Voting Songs\n')
+		while True:
+			if no_of_votes:
+				writelog('Prompt: Next 2 Songs\n')
+				playPrompt(locPrompt+"next_2_songs", noDigit) # Welcome Prompt
+
+			writelog('Voting Two Songs\n')
+			songs=select2songs()
+			vote_object = VoteTwoSongs.objects.create(call=call_object)
+			count=0
+
+			for song in songs: # Writing the songs id in database
+				count=count+1
+				if count==1:
+					song1=song
+					VoteTwoSongs.objects.filter(id=vote_object.id).update(song1of2=song)
+				if count==2:
+					song2=song
+					VoteTwoSongs.objects.filter(id=vote_object.id).update(song2of2=song)
+
+			writelog('Call Status: Playing Songs\n')
+
+			for song in songs: # Playing Songs
+				play_song = str(song.recording)
+				writelog('Song: '+play_song+'\n')
+				playPrompt(locRecord + play_song[:-4], noDigit)
+
+			while True:
+				writelog('Prompt: Voting Instruction\n')
+				result=playPrompt(locPrompt+"vote_instruction_2", zerototwo)
+                                if result not in twoOptions and result != '48':
+                                   result=wait()
+
+				if result in twoOptions:
+					curTime = time.strftime(datetimeFormat)
+					writelog('Voted Song: '+str(int(chr(int(result))))+'\n')
+					no_of_votes=no_of_votes+1
+					if result == '49':
+						VoteTwoSongs.objects.filter(id=vote_object.id).update(winnerof2=song1, votetime=datetime.datetime.strptime(curTime, datetimeFormat))
+						break
+					else:
+						VoteTwoSongs.objects.filter(id=vote_object.id).update(winnerof2=song2, votetime=datetime.datetime.strptime(curTime, datetimeFormat))
+						break
+				elif result =='48':
+					curTime = time.strftime(datetimeFormat)
+					no_of_votes=no_of_votes+1
+					VoteTwoSongs.objects.filter(id=vote_object.id).update(winnerof2=0, votetime=datetime.datetime.strptime(curTime, datetimeFormat))
+					break
+
+				else:		
+					writelog('Call Status: Voted Nothing or Wrong Vote, Playing Songs Again\n')
+					for song in songs: # Playing Songs
+						play_song = str(song.recording)
+						playPrompt(locRecord + play_song[:-4], noDigit)	# Question prompt
+	
+
+	else:
+		# Four Songs Voting
+		writelog('Prompt: Welcome\n')
+		playPrompt(locPrompt+"welcome_4", noDigit) # Welcome Prompt
+                writelog('Prompt: Voting Instruction\n')
+                playPrompt(locPrompt+'vote_instruction_4', noDigit)
+		writelog('Call Status: Voting Songs\n')
+		while True:
+			if no_of_votes:
+				writelog('Prompt: Next 4 Songs\n')
+				playPrompt(locPrompt+"next_4_songs", noDigit) # Welcome Prompt
+
+			writelog('Voting Four Songs\n')
+			songs=select4songs()
+			vote_object = VoteFourSongs.objects.create(call=call_object)
+			count=0
+	
+			for song in songs: # Writing the songs id in database
+				count=count+1
+				if count==1:
+					song1=song
+					VoteFourSongs.objects.filter(id=vote_object.id).update(song1of4=song)
+				if count==2:
+					song2=song
+					VoteFourSongs.objects.filter(id=vote_object.id).update(song2of4=song)
+				if count==3:
+					song3=song
+					VoteFourSongs.objects.filter(id=vote_object.id).update(song3of4=song)
+				if count==4:
+					song4=song
+					VoteFourSongs.objects.filter(id=vote_object.id).update(song4of4=song)
+
+			writelog('Call Status: Playing Songs\n')
+	
+			for song in songs: # Playing Songs
+				play_song = str(song.recording)
+				writelog('Song: '+play_song+'\n')
+				playPrompt(locRecord + play_song[:-4], noDigit)	# Question prompt
+	
+	
+			while 1:
+				writelog('Prompt: Voting Instruction\n')
+				result=playPrompt(locPrompt+'vote_instruction_4', zerotofour)
+                                if result not in fourOptions and result != '48':
+                                   result=wait()
+
+				if result in fourOptions:
+					curTime = time.strftime(datetimeFormat)
+					writelog('Voted Song: '+str(int(chr(int(result))))+'\n')
+					no_of_votes=no_of_votes+1
+					if result == '49':
+						VoteFourSongs.objects.filter(id=vote_object.id).update(winnerof4=song1, votetime=datetime.datetime.strptime(curTime, datetimeFormat))
+						break
+					if result == '50':
+						VoteFourSongs.objects.filter(id=vote_object.id).update(winnerof4=song2, votetime=datetime.datetime.strptime(curTime, datetimeFormat))
+						break
+					if result == '51':
+						VoteFourSongs.objects.filter(id=vote_object.id).update(winnerof4=song3, votetime=datetime.datetime.strptime(curTime, datetimeFormat))
+						break
+					if result == '52':
+						VoteFourSongs.objects.filter(id=vote_object.id).update(winnerof4=song4, votetime=datetime.datetime.strptime(curTime, datetimeFormat))
+						break
+				elif result =='48':
+					curTime = time.strftime(datetimeFormat)
+					no_of_votes=no_of_votes+1
+					VoteFourSongs.objects.filter(id=vote_object.id).update(winnerof4=0, votetime=datetime.datetime.strptime(curTime, datetimeFormat))
+					break
+				else:		
+					writelog('Call Status: Voted Nothing or Wrong Vote, Playing Songs Again\n')
+					for song in songs: # Playing Songs
+						play_song = str(song.recording)
+						playPrompt(locRecord + play_song[:-4], noDigit)	# Question prompt
+	
+
+def writelog(content):
+   cur_Time = time.strftime("%d-%m-%Y---%H:%M:%S")
+   logF.write(cur_Time+': '+ content)
+   logF.flush()
+   sys.stderr.write(cur_Time+': '+ content)
+   sys.stderr.flush()
+
+# Functions ends here
+
+# Main Code
+call_startTime = time.strftime("%d-%m-%Y---%H:%M:%S")
+monitorCall() # Start Call Recording and Logger
+logF = open(logFile, 'a')
+
+# Check whether Incoming Phone Number is New or Not
+phoneNo_object, created = PhoneNo.objects.get_or_create(phoneNo=phno)
+
+# Enter Call Details into DB
+call_object = Call.objects.create(phoneNo=phoneNo_object, startTime=datetime.datetime.strptime(curTime, datetimeFormat), monitorFile=monitorFiledb + '.wav')
+writelog('\n\n********* New Call *********\n')
+writelog('PhoneNo: '+phno+'\n')
+writelog('CallID: '+str(call_object.id)+'\n')
+logF.flush()
+#playPrompt(locPrompt+"welcome", noDigit) # Welcome Prompt
+
+# If Caller is New, associate voting type
+if created:
+	even=0
+	odd=1
+	writelog('CallerType: New\n')
+	# Alternate Between 2 and 4 Songs Voting
+	if (random.randint(0,1) == 0):
+		votingtype_object = VotingType.objects.create(phoneNo=phoneNo_object, votingType = even)
+		writelog('Voting Type: Two Songs\n')
+		voteSong(even, no_of_votes)
+	else:
+		votingtype_object = VotingType.objects.create(phoneNo=phoneNo_object, votingType = odd)
+		writelog('Voting Type: Four Songs\n')
+		voteSong(odd, no_of_votes)
+
+# If Caller is not new
+else:
+	even=0
+	odd=1
+	writelog('CallerType: Old\n')
+	try:
+		votingtype_object=VotingType.objects.get(phoneNo_id=phoneNo_object.id)
+        except VotingType.DoesNotExist:
+
+		if (random.randint(0,1) == 0):
+			votingtype_object = VotingType.objects.create(phoneNo=phoneNo_object, votingType = even)
+			writelog('Voting Type: Two Songs\n')
+		else:
+			votingtype_object = VotingType.objects.create(phoneNo=phoneNo_object, votingType = odd)
+			writelog('Voting Type: Four Songs\n')
+
+	voteSong(votingtype_object.votingType, no_of_votes)
+
+
+# Main code ends here

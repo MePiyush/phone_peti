@@ -1,0 +1,376 @@
+#!/usr/bin/python
+
+import sys
+import re
+import time
+import datetime
+import random
+import os
+
+# Importing Djando models
+sys.path.append('/usr/local/phonepeti/') # Path
+os.environ['DJANGO_SETTINGS_MODULE'] = 'VoiceApplications.settings'
+
+from PhonePeti.models import *
+from GKAIdol.models import *
+
+# Read and ignore AGI environment (read until blank line)
+
+env = {}
+tests = 0;
+
+while 1:
+   line = sys.stdin.readline().strip()
+
+   if line == '':
+      break
+   key,data = line.split(':')
+   if key[:4] <> 'agi_':
+      #skip input that doesn't begin with agi_
+      sys.stderr.write("Did not work!\n");
+      sys.stderr.flush()
+      continue
+   key = key.strip()
+   data = data.strip()
+   if key <> '':
+      env[key] = data
+
+sys.stderr.write("AGI Environment Dump:\n");
+sys.stderr.flush()
+for key in env.keys():
+   sys.stderr.write(" -- %s = %s\n" % (key, env[key]))
+   sys.stderr.flush()
+
+def checkresult (params):
+   params = params.rstrip()
+   if re.search('^200',params):
+      result = re.search('result=(\d+)',params)
+      if (not result):
+         sys.stderr.write("FAIL ('%s')\n" % params)
+         sys.stderr.flush()
+         return -1
+      else:
+         result = result.group(1)
+         #debug("Result:%s Params:%s" % (result, params))
+         sys.stderr.write("PASS (%s)\n" % result)
+         sys.stderr.flush()
+         return result
+   else:
+      sys.stderr.write("FAIL (unexpected result '%s')\n" % params)
+      sys.stderr.flush()
+      return -2
+
+# Variables for time
+
+datetimeFormat = "%d-%m-%Y---%H:%M:%S"
+curTime = time.strftime(datetimeFormat)
+curDate = time.strftime("%d-%m-%Y")
+
+# Path variables
+
+locPrompt = "/usr/local/phonepeti/GKAIdol/media/prompts/" # Path # Location of prompts folder
+locRecord = "/usr/local/phonepeti/GKAIdol/media/recordings/"  # Path # Location of call recordings
+locLog = "/usr/local/phonepeti/GKAIdol/logs/"  # Path # Location of call logs
+
+record_Call = "Complete--" + curTime # Path
+personal_details = "Personal-Details--" + curTime # Path
+recorded_song = "Recorded-Song--" + curTime # Path
+
+monitorFile = locRecord + record_Call
+monitorFiledb = record_Call
+
+personalDetailFile = locRecord + personal_details
+personalDetailFiledb = personal_details
+
+
+recordedSongFile = locRecord + recorded_song
+recordedSongFiledb = recorded_song
+
+logFile = locLog + curDate + '.log'
+
+# Call variables
+noDigit = "\""
+phno = env['agi_callerid']
+stopRecording = "1234567890"
+stopR = "#"
+recFormat = "wav"
+maxTimeout_song = 30000
+maxTimeout_callerinfo = 20000
+flag=1
+# Functions
+
+#def beep ():
+#	playPrompt(locPrompt+"beep", noDigit)
+
+def monitorCall():
+	sys.stderr.write("EXEC MixMonitor %s.%s \n" % (monitorFile, recFormat))
+	sys.stderr.flush( )
+	sys.stdout.write("EXEC MixMonitor %s.%s \n" % (monitorFile, recFormat))
+	sys.stdout.flush( )
+	result = sys.stdin.readline( ).strip( )
+	checkresult(result)
+
+def playPrompt (prompt, escdigit):
+       sys.stderr.write("STREAM FILE %s %s \n" % (prompt, escdigit))
+       sys.stderr.flush( )
+       sys.stdout.write("STREAM FILE %s %s \n" % (prompt, escdigit))
+       sys.stdout.flush( )
+       result = sys.stdin.readline( ).strip( )
+       return checkresult(result)
+
+def recordFeedback (option):
+	if option == 'personaldetails':
+		recordFile(personalDetailFile, maxTimeout_callerinfo)	
+	elif option == 'recordsong':
+		recordFile(recordedSongFile, maxTimeout_song)
+
+def recordFile (recordedFile, maxTimeout):
+	sys.stderr.write("RECORD FILE %s %s %s %d 0 \" s=8\n" % (recordedFile, recFormat, stopR, maxTimeout))
+	sys.stderr.flush( )
+	sys.stdout.write("RECORD FILE %s %s %s %d 0 \" s=8\n" % (recordedFile, recFormat, stopR, maxTimeout))
+	sys.stdout.flush( )
+	result = sys.stdin.readline( ).strip( )
+	checkresult(result)
+
+def wait ():
+	sys.stderr.write("WAIT FOR DIGIT 10000 \n") # Wait for 10 sec 
+	sys.stderr.flush( )
+	sys.stdout.write("WAIT FOR DIGIT 10000 \n")
+	sys.stdout.flush( )
+	result = sys.stdin.readline( ).strip( )
+	result = checkresult(result)	
+	return result
+
+
+def personalDetails(choice):
+	CallerDetailsRecording_object = CallerDetailsRecording.objects.create(phoneNo=phoneNo_object, personalDetail = personalDetailFiledb + '.wav', call = call_object)
+	if choice == 0:
+#		logF.write('PromptType: Bell\n')
+		writelog('PromptType: Bell\n')
+		playPrompt(locPrompt+"request_name_age_bell", noDigit)
+		playPrompt(locPrompt+"bell", noDigit)
+		recordFeedback("personaldetails")
+	else:
+#		logF.write('PromptType: Button Press\n')
+		writelog('PromptType: Button Press\n')
+
+		playPrompt(locPrompt+"request_name_age_button_press", noDigit)
+		result=wait()
+		while 1:
+			if not (result == '0') :
+				recordFeedback('personaldetails')
+#			    	logF.write('Key Pressed: '+str(int(chr(int(result))))+'\n')
+				writelog('Key Pressed: '+str(int(chr(int(result))))+'\n')
+				logF.flush()
+
+
+				break;
+			else:
+#			    	logF.write('Key Pressed: '+str(int(chr(int(result))))+'\n')
+				writelog('Key Pressed: '+str(int(chr(int(result))))+'\n')
+#				logF.flush()
+				playPrompt(locPrompt+"request_name_age_button_press", noDigit)
+				result=wait()
+#				if not (result == '0'):
+#					recordFeedback('personaldetails')
+#					break;
+#				else:
+#					playPrompt(locPrompt+"request_name_age_button_press", noDigit)
+
+
+def recordSong(choice):
+#	logF.write('Call Status: Recording Song\n')
+#	logF.write('Prompt: Request Song Record\n')
+#	logF.write('Recorded Song File: ' + recordedSongFile +'.wav\n')
+	writelog('Call Status: Recording Song\n')
+	writelog('Prompt: Request Song Record\n')
+	writelog('Recorded Song File: ' + recordedSongFile +'.wav\n')
+#	logF.flush()
+
+	Recording_object = Recording.objects.create(phoneNo=phoneNo_object, recording = recordedSongFiledb + '.wav', call = call_object)
+
+	if choice == 0:
+#		logF.write('PromptType: Bell\n')
+		writelog('PromptType: Bell\n')
+
+		playPrompt(locPrompt+"request_song_record_bell", noDigit)
+		playPrompt(locPrompt+"bell", noDigit) # Prompt Missing
+		recordFeedback("recordsong")
+	else:
+#		logF.write('PromptType: Button Press\n')
+		writelog('PromptType: Button Press\n')
+
+		playPrompt(locPrompt+"request_song_record_button_press", noDigit)
+		result=wait()
+		while 1:
+			if not (result=='0'):
+				recordFeedback('recordsong')
+#			    	logF.write('Key Pressed: '+str(int(chr(int(result))))+'\n')
+				writelog('Key Pressed: '+str(int(chr(int(result))))+'\n')
+				logF.flush()
+
+				break;
+			else:
+#			    	logF.write('Key Pressed: '+str(int(chr(int(result))))+'\n')
+				writelog('Key Pressed: '+str(int(chr(int(result))))+'\n')
+				logF.flush()
+				playPrompt(locPrompt+"request_song_record_button_press", noDigit)			
+				result=wait()
+#				if not (result=='0'):
+#					recordFeedback('recordsong')
+#					break;
+#				else:
+#					result = playPrompt(locPrompt+"request_song_record_button_press", noDigit)
+
+
+
+
+def writelog(content):
+	cur_Time = time.strftime("%d-%m-%Y---%H:%M:%S")
+	logF.write(cur_Time+': '+ content)
+	logF.flush()
+
+# Functions ends here
+
+# Main Code
+call_startTime = time.strftime("%d-%m-%Y---%H:%M:%S")
+# Start Call Recording and Logger
+monitorCall()
+logF = open(logFile, 'a')
+
+# Check whether Incoming Phone Number is New or Not
+phoneNo_object, created = PhoneNo.objects.get_or_create(phoneNo=phno)
+
+# Enter Call Details into DB
+call_object = Call.objects.create(phoneNo=phoneNo_object, startTime=datetime.datetime.strptime(curTime, datetimeFormat), monitorFile=monitorFiledb + '.wav')
+writelog('\n\n********* New Call *********\n')
+#logF.write('\n\n********* New Call *********\n')
+writelog('PhoneNo: '+phno+'\n')
+#logF.write('PhoneNo: '+phno+'\n')
+writelog('CallID: '+str(call_object.id)+'\n')
+#logF.write('CallID: '+str(call_object.id)+'\n')
+writelog('Prompt: Welcome\n')
+#logF.write('StartTime: '+call_startTime+'\n')
+#logF.write('Prompt: Welcome\n')
+logF.flush()
+playPrompt(locPrompt+"welcome", noDigit) # Welcome Prompt
+
+# If Caller is New, Play Personal Details Prompt
+if created:
+	even=0
+	odd=1
+	#logF.write('CallerType: New\n')
+	#logF.write('Call Status: Recording Personal Details\n')
+	#logF.write('Prompt: Record Name & Age\n')
+	#logF.write('Personal Details File: ' + personalDetailFile +'.wav\n')
+	writelog('CallerType: New\n')
+	writelog('Call Status: Recording Personal Details\n')
+	writelog('Prompt: Record Name & Age\n')
+	writelog('Personal Details File: ' + personalDetailFile +'.wav\n')
+
+	logF.flush()
+	# Alternate Between Bell and Press Button Prompts.
+	if (call_object.id %2 == 0):
+		recordingtype_object = RecordingType.objects.create(phoneNo=phoneNo_object, recordingType = even)
+		personalDetails(even) # Bell
+#		logF.write('Prompt: Thank You Name & Age\n')
+		writelog('Prompt: Thank You Name & Age\n')
+		playPrompt(locPrompt+"thankyou_name_age", noDigit) # Thanks Prompt
+		recordSong(even)
+	else:
+		recordingtype_object = RecordingType.objects.create(phoneNo=phoneNo_object, recordingType = odd)
+		personalDetails(odd) # Button Press
+#		logF.write('Prompt: Thank You Name & Age\n')
+		writelog('Prompt: Thank You Name & Age\n')
+		playPrompt(locPrompt+"thankyou_name_age", noDigit) # Thanks Prompt
+		recordSong(odd)
+
+# If Caller is not new
+else:
+	even=0
+	odd=1
+#	logF.write('CallerType: Old\n')
+	writelog('CallerType: Old\n')
+
+#	logF.flush()
+	try:
+		recordingtype_object=RecordingType.objects.get(phoneNo_id=phoneNo_object.id)
+	except RecordingType.DoesNotExist:
+		if (call_object.id %2 == 0):
+			recordingtype_object = RecordingType.objects.create(phoneNo=phoneNo_object, recordingType = even)
+		else:
+			recordingtype_object = RecordingType.objects.create(phoneNo=phoneNo_object, recordingType = odd)
+
+
+
+	try:
+                old_caller_object = CallerDetailsData.objects.get(phoneNo_id=phoneNo_object.id)
+        except CallerDetailsData.DoesNotExist:
+#		logF.write('Call Status: Recording Personal Details Again\n')
+#		logF.write('Prompt: Record Name & Age\n')
+#		logF.write('Personal Details File: ' + personalDetailFile +'.wav\n')
+
+		writelog('Call Status: Recording Personal Details Again\n')
+		writelog('Prompt: Record Name & Age\n')
+		writelog('Personal Details File: ' + personalDetailFile +'.wav\n')
+		logF.flush()
+		personalDetails(recordingtype_object.recordingType)
+#		logF.write('Prompt: Thank You Name & Age\n')
+		writelog('Prompt: Thank You Name & Age\n')
+		playPrompt(locPrompt+"thankyou_name_age", noDigit) # Thanks Prompt
+
+	try:
+		lastRecording_object=Recording.objects.filter(phoneNo_id=phoneNo_object.id).order_by('-id')[0]
+	
+		lastRecording = str(lastRecording_object.recording)
+
+
+	#	logF.write('Prompt: Playing Recording\n')
+	#	logF.write('Call Status: Playing Previous Recording\n')
+	
+		writelog('Prompt: Playing Recording\n')
+		writelog('Call Status: Playing Previous Recording\n')
+		playPrompt(locPrompt+"play_recorded_song", noDigit) # Play Recorded Song
+		playPrompt(locRecord + lastRecording[:-4], noDigit)
+		playPrompt(locPrompt+"request_change_song", noDigit) # Play Recorded Song
+	#	logF.write('Prompt: Request Change Song\n')
+		writelog('Prompt: Request Change Song\n')
+	
+		result = wait()
+		if not (result=='0'):
+			writelog('Key Pressed: '+str(int(chr(int(result))))+'\n')
+	#	    	logF.write('Key Pressed: '+str(int(chr(int(result))))+'\n')
+			logF.flush()
+			recordSong(recordingtype_object.recordingType)
+		else:
+			flag=0;
+	except:
+		recordSong(recordingtype_object.recordingType)
+
+if not (flag==0):
+#	logF.write('Prompt: Playing Recording\n')
+	writelog('Prompt: Playing Recording\n')	
+	playPrompt(locPrompt+"play_recorded_song", noDigit) # Prompt Missing
+	playPrompt(recordedSongFile, noDigit)
+	#logF.write('Call Status: Playing Recorded Song\n')
+	writelog('Call Status: Playing Recorded Song\n')
+
+
+#logF.write('Prompt: Repeat Call Info\n')
+#logF.write('Prompt: Thank You\n')
+writelog('Prompt: Repeat Call Info\n')
+writelog('Prompt: Thank You\n')
+
+logF.flush()
+playPrompt(locPrompt+"repeat_call_info", noDigit) # Repeat Call Info Prompt
+playPrompt(locPrompt+"thankyou", noDigit) # ThankYou Prompt
+curTime = time.strftime(datetimeFormat)
+call_endTime = time.strftime("%d-%m-%Y---%H:%M:%S")
+#logF.write('EndTime: '+call_endTime+'\n')
+logF.write('********* End Call *********\n')
+writelog('Call End\n')
+logF.write('********* End Call *********\n')
+#logF.flush()
+Call.objects.filter(id=call_object.id).update(endTime=datetime.datetime.strptime(curTime, datetimeFormat))
+logF.close()
+# Main code ends here

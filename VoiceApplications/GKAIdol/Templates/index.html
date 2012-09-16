@@ -1,0 +1,18 @@
+<html>
+	<head>
+		<title>PhonePeti - Voice Based Applications</title>
+	</head>
+
+	<body>
+	<br/>
+		<h1><center>Welcome</h1>
+		{% if user.username %}
+	<br/><br/>
+
+			<h2><center><i><a href = "/allrecordings/" title = "Click to view new recordings">New Recordings</a>&nbsp;&nbsp;<a href = "/shortlisted_recordings/" title = "Click to view shortlisted recordings">Shortlisted Recordings</a>&nbsp;&nbsp;<a href = "/rejected_recordings/" title = "Click to view rejected recordings">Rejected Recordings</a></i></h2>
+			<h4><center>Click here to <a href = "/logout/"> <i>Logout</i></a></h4>
+		{% else %}
+			<p><center>Please <a href = "/login/"><i>LOGIN</i></a> to continue! </p>
+		{% endif %}	
+	</body>
+</html>

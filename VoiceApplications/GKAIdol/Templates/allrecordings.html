@@ -1,0 +1,112 @@
+<html>
+	<head>
+		<title>PhonePeti - Voice Based Applications</title>
+		<script type="text/javascript">
+
+			function hidefield()
+			{
+				document.getElementById('edit_frame').style.display='none';
+			}
+			function GoTo(loc_url)
+			{
+				document.getElementById('edit_frame').style.display='block';
+				document.getElementById('edit_frame').style.position='absolute';
+				document.getElementById('edit_frame').src=loc_url;
+			}
+			function ChangeRowColor(tableRow)
+			{
+				var myTable=document.getElementById('feedback');
+				var i=0;
+				for (i=0;i<myTable.rows.length;i++)	
+				{
+					myTable.rows[i].bgColor = 'white';	
+				}
+				tableRow.bgColor='#ecf2fa';
+			}
+
+		</script>
+		<style type="text/css">
+			#edit_frame
+			{
+				top: 10%; left: 55%;
+			}
+			table
+			{
+				width: 45%;
+				border-collapse: collapse;
+				cursor: pointer;
+				position: absolute;
+			}
+			td, th
+			{
+				padding: 5px 10px;
+			}
+			thead th
+			{
+				background: #110303;
+				color: #fff;
+			}
+			tbody td
+			{
+				border: 1px #D8D5D5;
+				text-align: center;
+			}
+		</style>
+
+	</head>
+	<body onload="hidefield()">
+
+		<h1><center><i> New Recordings </i></h1>
+		{% if all_recordings %}
+
+		<h3><i> Select the <b>Recording </b> to Edit details</i></h3>
+		<table id="feedback">
+		<thead>
+		<tr>
+			<th>Phone No</th>
+			<th>Date & Time</th>
+		</tr>
+		</thead>
+
+		<tbody>
+		{% for recordings in all_recordings %}
+
+
+		<tr onclick="ChangeRowColor(this); GoTo('/edit/{{ recordings.id }}');">
+			<td> {{ recordings.call.phoneNo.phoneNo }} </td>
+			<td> {{ recordings.call.startTime }} </td>
+		</tr>
+
+		{% endfor %}
+
+		<tr>
+			<td>
+			<div class="pagination1">
+				<span class="step-links">
+			        {% if all_recordings.has_previous %}
+			            <a href="?page={{ all_recordings.previous_page_number }}">Previous</a>
+			        {% endif %}
+
+			        <span class="current">
+				Page {{ all_recordings.number }} of {{ all_recordings.paginator.num_pages }}
+			        </span>
+			        {% if all_recordings.has_next %}
+				<a href="?page={{ all_recordings.next_page_number }}">Next</a>
+				{% endif %}
+				</span>
+			</div>
+			</td>
+			<td><i><a href="/">Home</a><i></td>
+		</tr>
+		</tbody>
+
+		</table>
+
+		<iframe id="edit_frame" src="" scrolling="auto" width="550" height="650" frameborder="0"></iframe>
+		{% else %}
+
+		<p><center>No New Recordings !!!</p>
+		<i><a href="/">Home</a><i>
+		{% endif %}
+	</body>
+</html>

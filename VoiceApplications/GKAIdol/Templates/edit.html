@@ -1,0 +1,82 @@
+<html>
+	<head>
+		<title>PhonePeti - Voice Based Applications</title>
+		<script type="text/javascript">
+
+			function close_edit_frame()
+			{
+				parent.document.getElementById('edit_frame').style.display="none";
+				//var myTable=parent.document.getElementById('recording');
+				//var i=0;
+				//for (i=0;i<myTable.rows.length;i++)	
+				//{
+				//	myTable.rows[i].bgColor = 'white';	
+				//}
+				parent.window.location.reload();
+			}
+
+			function showtags()
+			{
+			document.getElementById('tag_list').style.display="block";
+			}
+			function showfield(name)
+			{
+				if(name=="Add New Caller")document.getElementById('New Caller').style.display="block";
+				else document.getElementById('New Caller').style.display="none";
+			}
+			function hidefield()
+			{
+				document.getElementById('tag_list').style.display='none';
+				document.getElementById('New Caller').style.display='none';
+			}
+		</script>
+
+		<style type="text/css">
+			#tag_list { margin: -60px 320px; border:1px dotted #ccc; width:180px; height: 100px; overflow: auto; }
+		</style>
+
+	</head>
+	
+	<body onload="hidefield();">
+
+		<p><i><span style="font-size: 18px;"><b> Recording Details </b></span></i></p>
+
+		{% if error_message %}
+			<p><strong>{{ error_message }}</strong></p>
+		{% endif %}
+
+
+		<form action="/edit/{{ recording.id }}/" method="post">
+			{% csrf_token %}
+			<p><b><i>Phone No:</i>  {{ recording.call.phoneNo.phoneNo }} &nbsp; &nbsp; <i>Date & Time:</i>  {{ recording.call.startTime }}</b></p>
+			<p><i><embed  src="/CallRecordings/{{ recording.recording }}" autostart=FALSE height="22" bgcolor="white"/> ( <a href="/download/{{ recordingid }}/">Download</a> )</i></p>
+
+<!--
+{{recording_form.as_p}}
+-->
+			<p><i>Accept:</i>  {{ recording_form.status }}</p>
+<!--			<p><i>Tags:  </i><input type="text" id="tagName" name="tagName" value="{{ tags_of_call_comma_sep }}"/></p>
+-->			<p><i>Tags:  </i><input type="text" id="tagName" name="tagName" onclick="showtags();"/></p>
+			
+		<div id="tag_list"> 
+		{% for tags in all_tags %}
+			{% if tags.tagName in tags_of_call_comma_sep %}
+				<input type="checkbox" name="tagName" value="{{ tags.tagName }}" checked/> {{ tags.tagName }} <br />
+			{% else %}
+				<input type="checkbox" name="tagName" value="{{ tags.tagName }}" /> {{ tags.tagName }} <br />
+			{% endif %}
+		{% endfor %}
+		</div>
+
+			<p><i><span style="font-size: 18px;"><b> Caller Details </b></span></i></p>
+
+			<p><i><embed  src="/CallRecordings/{{ personaldetail.personalDetail }}" autostart=FALSE height="22" bgcolor="white"/></i></p>
+
+			<p><i>Name:</i>  {{ caller_form.name }}</p>
+			<p><i>Age:</i>  {{ caller_form.age }}</p>
+			<p><i>Gender:</i>  {{ caller_form.gender }}</p>
+
+			<p><center><input type="submit" value="Save" onclick="close_edit_frame();"/></p>
+			</form>
+	</body>
+</html>
