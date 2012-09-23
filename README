@@ -1,99 +1,42 @@
+This repository contains two applications whose details are given below. Both the applications are present in VoiceApplications folder.
+
+1. First applications is Feedback Application, which can be used to collect and record Feedback of the callers. Callers can call into the IVR system and record their feedback.
+2. Second application is GKAIdol (Gurgoan Ki Awaaz Idol) Application. In this, community members can call into the IVR system to record their songs, and vote to select the best songs.
+
 Instructions for Running the Applications:
 
-1. RUN the Install script as root
-2. Give the location of the Feedback AGI (/usr/local/phonepeti/Feedback/Feedback.agi) file in the extentions.conf (/etc/asterisk/extensions.conf) or Replace the existing extentions.conf file at '/etc/asterisk/extensions.conf' with the given file
+Install Asterisk
+1. Download Asterisk from http://www.asterisk.org/downloads
+2. cd /usr/src
+3. sudo tar zxvf (location of the downloaded file)
+4. sudo apt-get install ncurses-dev libxml2-dev g++
+5. cd (name of asterisk directory)
+6. sudo ./configure
+7. sudo make clean
+8. sudo make
+9. sudo make install
+10. sudo make samples
 
+Install package called Chan Dongle for Asterisk (For using USB Dongle {Huawei E173} as a Gateway for calls ) 
+1. Download package from http://code.google.com/p/asterisk-chan-dongle/
+2. sudo tar -zxvf (location of the downloaded file)
+3. cd (name of asterisk directory)
+4. sudo ./configure
+5. sudo make
+6. sudo make install
+7. Once installed, copy example file dongle-read-only/etc/dongle.conf to /etc/asterisk/. Configure it as desired and enter the IMEI number of the device.
 
-Part 1 - Asterisk
-1. Install Asterisk
-2. Replace the existing extentions.conf file at '/etc/asterisk/extensions.conf' with the given file
-3. Create following folders
-	i. /usr/local/phonepeti/media/prompts 
-	ii. /usr/local/phonepeti/media/recordings
-	iii. /usr/local/phonepeti/logs
-4. Copy all the Prompts into the prompts folder
-5. Change recursively the permissions of the folder phonepeti/media and phonepeti/logs to a+w 
-6. Install softphone like Twinkle
-7. Install sox
+For more detailed instructions about Chan Dongle visit http://wiki.e1550.mobi
 
-Part - 2 MySql
-1. Intall mysql-server
-2. Create Database PhonePeti
+After installing above mentioned packages, any of the two applications can be installed.
 
-Part 3 - Django
-1. Install libmysqlclient-dev, python2.6-dev, MySQL-Python 
-2. Install Django
-3. Copy VoiceApplications/* to /usr/local/phonepeti
-4. Configure the settings.py file (add the database information, location of Templates folder, media path, Time Zone)
-5. Run python manage.py syncdb
+For Running the First (Feedback) Application-
 
-Part - 4 
-1. Create entry in 'PhonePeti_application' table in the database: INSERT INTO PhonePeti_application (name, description) VALUES ('Feedback', 'Application for taking Feedback'); 
-2. Create entry in 'PhonePeti_appinstance' table in the database: INSERT INTO PhonePeti_appinstance (app_id, startTime, endTime, options) VALUES ('1', NULL, NULL, 'Feedback Application');
+1. RUN the Install_Feedback script as root.
+2. Give the location of the Feedback AGI (/usr/local/phonepeti/Feedback/Feedback.agi) file in the extentions.conf (/etc/asterisk/extensions.conf) or Replace the existing extentions.conf file at '/etc/asterisk/extensions.conf' with the given file for this application in the /usr/local/phonepeti/Feedback/ folder.
 
-Part - 5 
-1. Run Django server: python manage.py runserver
-2. Test the application
+For Running the Second (GKAIdol) Application-
 
-Part - 6
-1. Install apache webserver 
-2. Install mod_wsgi for apache
-3. Configure httpd.conf with the following entries
--------------------------------------------------------------------
-WSGIScriptAlias / /usr/local/phonepeti/VoiceApplications/wsgi.py
-WSGIPythonPath /usr/local/phonepeti
-
-<Directory /usr/local/phonepeti/VoiceApplications>
-<Files wsgi.py>
-Order deny,allow
-Allow from all
-</Files>
-</Directory>
--------------------------------------------------------------------
-
-
-
-More detailed instructions below:
-----------------------------------------------------------------
-- Install asterisk
-sudo cp extensions.conf /etc/asterisk/extensions.conf
-sudo mkdir -p /usr/local/phonepeti/media/prompts 
-sudo mkdir -p /usr/local/phonepeti/media/recordings
-sudo mkdir -p /usr/local/phonepeti/logs
-sudo chmod -R a+w /usr/local/phonepeti/logs 
-sudo chmod -R a+w /usr/local/phonepeti/media
-
-sudo apt-get install twinkle mysql-server sox
-mysql -uroot -pjunoon -e "create database PhonePeti"
-
-sudo apt-get install libmysqlclient-dev python2.6-dev
-sudo apt-get install python-setuptools
-- download/extract mysql-python
-cd MySQL-python
-python setup.py build
-python setup.py install
-
-- download/extract Django 1.4
-cd Django-1.4 and follow instructions in there.
-
-- change settings.py to update database username and password
-- change settings.py to update template path
-- change settings.py to update media path
-- change database entries in Feedback.agi
-- Need to create app, appinstance entries in the database
-
-sudo apt-get install apache2
-sudo apt-get install libapache2-mod-wsgi
-- Configure /etc/apache2/httpd.conf with following entries
---------------------------
-WSGIScriptAlias / /usr/local/phonepeti/VoiceApplications/wsgi.py
-WSGIPythonPath /usr/local/phonepeti
-
-<Directory /usr/local/phonepeti/VoiceApplications>
-<Files wsgi.py>
-Order deny,allow
-Allow from all
-</Files>
-</Directory>
--------------------------
-
+1. RUN the desired Install_GKAIdol script as root.
+2. Give the location of the GKAIdol AGI (/usr/local/phonepeti/GKAIdol/GKAIdol.agi) file in the extentions.conf (/etc/asterisk/extensions.conf) or Replace the existing extentions.conf file at '/etc/asterisk/extensions.conf' with the given file for this application in the /usr/local/phonepeti/GKAIdol/ folder.
+3. In settings.py located at /usr/local/phonepeti/VoiceApplication/, uncomment the MEDIA_ROOT path for GKAIdol and comment the MEDIA_ROOT path for Feedback application. By default its commented for GKAIdol. 
